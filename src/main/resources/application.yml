@@ -1,0 +1,14 @@
+spring:
+  application:
+    name: UberBookingService
+  datasource:
+    url: jdbc:mariadb://localhost:3306/Uber_Db_Local
+    username: luffy
+    password: ${db_password}
+  jpa:
+    show-sql: true
+    hibernate:
+      ddl-auto: validate
+
+server:
+  port: 8000
