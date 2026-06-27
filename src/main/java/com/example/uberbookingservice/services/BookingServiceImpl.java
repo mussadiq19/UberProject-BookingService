@@ -1,16 +1,14 @@
 package com.example.uberbookingservice.services;
 
 import com.example.uberbookingservice.apis.LocationServiceApi;
-import com.example.uberbookingservice.dtos.CreateBookingDto;
-import com.example.uberbookingservice.dtos.CreateBookingResponseDto;
-import com.example.uberbookingservice.dtos.DriverLocationDto;
-import com.example.uberbookingservice.dtos.NearbyDriverRequestDto;
+import com.example.uberbookingservice.dtos.*;
 import com.example.uberbookingservice.repositories.BookingRepository;
+import com.example.uberbookingservice.repositories.DriverRepository;
 import com.example.uberbookingservice.repositories.PassengerRepository;
 import com.example.uberprojectentityservice.models.Booking;
 import com.example.uberprojectentityservice.models.BookingStatus;
+import com.example.uberprojectentityservice.models.Driver;
 import com.example.uberprojectentityservice.models.Passenger;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import retrofit2.Call;
@@ -32,13 +30,15 @@ public class BookingServiceImpl implements BookingServices  {
         private final LocationServiceApi locationServiceApi;
 
         private static  final String LOCATION_SERVICE="http://localhost:7777";
+    private final DriverRepository driverRepository;
 
-        public BookingServiceImpl(PassengerRepository passengerRepository, BookingRepository bookingRepository, LocationServiceApi locationServiceApi) {
+    public BookingServiceImpl(PassengerRepository passengerRepository, BookingRepository bookingRepository, LocationServiceApi locationServiceApi, DriverRepository driverRepository) {
                 this.passengerRepository = passengerRepository;
                 this.bookingRepository = bookingRepository;
             this.locationServiceApi = locationServiceApi;
             this.restTemplate = new RestTemplate();
-        }
+        this.driverRepository = driverRepository;
+    }
 
         @Override
         public CreateBookingResponseDto createBooking(CreateBookingDto bookingDetails) {
@@ -72,7 +72,26 @@ public class BookingServiceImpl implements BookingServices  {
 
 
         }
-        private void processNearbyDriversAsync(NearbyDriverRequestDto requestDto){
+
+    @Override
+    public UpdateBookingResponseDto updateBooking(UpdateBookingRequestDto bookingRequestDto, Long bookingId) {
+
+       Driver driver = driverRepository.findById(bookingRequestDto.getDriverId())
+                .orElseThrow(() -> new RuntimeException("Driver not found with id: " + bookingRequestDto.getDriverId()));
+
+        bookingRepository.updateBookingStatusAndDriverById(bookingId, BookingStatus.SCHEDULED, driver);
+
+        Booking booking = bookingRepository.findById(bookingId)
+                .orElseThrow(() -> new RuntimeException("Booking not found with id: " + bookingId));
+
+        return UpdateBookingResponseDto.builder()
+                .bookingId(bookingId)
+                .status(booking.getBookingStatus())
+                .driver(Optional.ofNullable(booking.getDriver()))
+                .build();
+    }
+
+    private void processNearbyDriversAsync(NearbyDriverRequestDto requestDto){
             Call<DriverLocationDto[]>call=locationServiceApi.getNearbyDrivers(requestDto);
             call.enqueue(new Callback<DriverLocationDto[]>() {
                 @Override
