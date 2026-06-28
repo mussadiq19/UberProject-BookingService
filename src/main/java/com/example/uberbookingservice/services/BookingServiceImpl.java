@@ -54,7 +54,7 @@ public class BookingServiceImpl implements BookingServices  {
          //make an api call to location service to fetch nearby drivers
                 NearbyDriverRequestDto request = NearbyDriverRequestDto.builder()
                         .latitude(bookingDetails.getStartLocation().getLatitude())
-                        .longitude(bookingDetails.getEndLocation().getLongitude())
+                        .longitude(bookingDetails.getStartLocation().getLongitude())
                         .build();
                 processNearbyDriversAsync(request,bookingDetails.getPassengerId(),newBooking.getId());
 //                ResponseEntity<DriverLocationDto[]> result= restTemplate.postForEntity(LOCATION_SERVICE+"/api/location/nearby/drivers",request,DriverLocationDto[].class);
@@ -103,14 +103,27 @@ public class BookingServiceImpl implements BookingServices  {
                     } catch (InterruptedException e) {
                         throw new RuntimeException(e);
                     }
+                    System.out.println("Location Service HTTP Code: " + response.code());
                     if(response.isSuccessful() && response.body()!=null){
                         List<DriverLocationDto> driverLocation = Arrays.asList(response.body());
                         driverLocation.forEach(driverLocationDto -> {
-                                System.out.println(driverLocationDto.getDriverId()+" "+ " lat: "+driverLocationDto.getLatitude()+" "+"long:"+driverLocationDto.getLongitude());
+                                System.out.println(driverLocationDto.getDriverId()+" "
+                                        + " lat: "+driverLocationDto.getLatitude()+" "
+                                        +"long:"+driverLocationDto.getLongitude());
                         });
                         raiseRideRequestAsync(RideRequestDto.builder().passengerId(passengerId).bookingId(bookingId).build());
                     }else {
-                     System.out.println("Request failed"+response.message());
+                        System.out.println("Location Service Request Failed");
+                        System.out.println("HTTP Code: " + response.code());
+                        System.out.println("Message: " + response.message());
+
+                        try {
+                            if (response.errorBody() != null) {
+                                System.out.println(response.errorBody().string());
+                            }
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
                  }
                 }
 
@@ -126,11 +139,27 @@ public class BookingServiceImpl implements BookingServices  {
         call.enqueue(new Callback<Boolean>() {
             @Override
             public void onResponse(Call<Boolean> call, Response<Boolean> response) {
+                System.out.println("Socket Service HTTP Code: " + response.code());
                 if(response.isSuccessful() && response.body()!=null){
+
+                    System.out.println("Ride request sent successfully.");
+                    System.out.println("Response: " + response.body());
+
                     Boolean result =response.body();
                     System.out.println("Driver response is" +result.toString());
                 }else {
-                    System.out.println("Request failed"+response.message());
+
+                    System.out.println("Socket Service Request Failed");
+                    System.out.println("HTTP Code: " + response.code());
+                    System.out.println("Message: " + response.message());
+
+                    try {
+                        if (response.errorBody() != null) {
+                            System.out.println(response.errorBody().string());
+                        }
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
                 }
             }
 
@@ -139,6 +168,7 @@ public class BookingServiceImpl implements BookingServices  {
                 t.printStackTrace();
             }
         });
+
     }
 
 }
