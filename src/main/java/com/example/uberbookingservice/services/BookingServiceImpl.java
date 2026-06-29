@@ -3,6 +3,7 @@ package com.example.uberbookingservice.services;
 import com.example.uberbookingservice.apis.LocationServiceApi;
 import com.example.uberbookingservice.apis.UberSocketApi;
 import com.example.uberbookingservice.dtos.*;
+import com.example.uberbookingservice.exceptions.BookingNotFoundException;
 import com.example.uberbookingservice.repositories.BookingRepository;
 import com.example.uberbookingservice.repositories.DriverRepository;
 import com.example.uberbookingservice.repositories.PassengerRepository;
@@ -84,10 +85,21 @@ public class BookingServiceImpl implements BookingServices  {
         bookingRepository.updateBookingStatusAndDriverById(bookingId, BookingStatus.SCHEDULED, driver);
 
         Booking booking = bookingRepository.findById(bookingId)
-                .orElseThrow(() -> new RuntimeException("Booking not found with id: " + bookingId));
+                .orElseThrow(() -> new BookingNotFoundException("Booking not found with id: " + bookingId));
 
         return UpdateBookingResponseDto.builder()
                 .bookingId(bookingId)
+                .status(booking.getBookingStatus())
+                .driver(Optional.ofNullable(booking.getDriver()))
+                .build();
+    }
+
+    @Override
+    public UpdateBookingResponseDto getBooking(Long bookingId) {
+        Booking booking=bookingRepository.findById(bookingId)
+                .orElseThrow(()->new BookingNotFoundException("Booking not found"));
+        return UpdateBookingResponseDto.builder()
+                .bookingId(booking.getId())
                 .status(booking.getBookingStatus())
                 .driver(Optional.ofNullable(booking.getDriver()))
                 .build();

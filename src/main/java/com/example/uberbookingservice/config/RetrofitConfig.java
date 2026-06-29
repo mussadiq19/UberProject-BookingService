@@ -4,14 +4,10 @@ import com.example.uberbookingservice.apis.LocationServiceApi;
 import com.example.uberbookingservice.apis.UberSocketApi;
 import com.netflix.discovery.EurekaClient;
 import okhttp3.OkHttpClient;
-import org.springframework.boot.jackson.autoconfigure.JacksonProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.xml.sax.Locator;
 import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
-
-import javax.xml.stream.Location;
 
 @Configuration
 public class RetrofitConfig {
@@ -21,8 +17,8 @@ public class RetrofitConfig {
     public RetrofitConfig(EurekaClient eurekaClient) {
         this.eurekaClient = eurekaClient;
     }
-    private String getServiceUrl(String serivceName){
-        return eurekaClient.getNextServerFromEureka(serivceName,false).getHomePageUrl();
+    private String getServiceUrl(String serviceName){
+        return eurekaClient.getNextServerFromEureka(serviceName,false).getHomePageUrl();
     }
 
     @Bean
